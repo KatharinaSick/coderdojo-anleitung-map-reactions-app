@@ -112,7 +112,7 @@ public class SecondFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         // Der Code in dieser Methode wird ausgeführt, wenn ein Fehler passiert ist.
-                        textViewInfo.setText(error.getMessage());
+                        textViewInfo.setText(error.toString());
                     }
                 });
 
