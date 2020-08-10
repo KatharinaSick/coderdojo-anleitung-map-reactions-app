@@ -1,4 +1,4 @@
-package dev.ksick.coderdojo.anleitung;
+package dev.ksick.coderdojo.anleitung.model;
 
 public class Place {
     private String name;
