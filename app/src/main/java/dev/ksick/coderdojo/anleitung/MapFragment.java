@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -130,6 +131,13 @@ public class MapFragment extends Fragment {
                         textViewInfo.setText(error.toString());
                     }
                 });
+
+        // Erhöht das Timeout für den Request auf 15 Sekunden
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                15000, // Das Timeout in Millisekunden
+                1, // Wie oft der Request wiederholt werden soll, wenn er fehlschlägt
+                1 // Mit dieser Zahl wird das Timeout bei jedem neuen Versuch multipliziert
+        ));
 
         // Fügt den Request zur RequestQueue hinzu um ihn abzusetzen
         requestQueue.add(stringRequest);
