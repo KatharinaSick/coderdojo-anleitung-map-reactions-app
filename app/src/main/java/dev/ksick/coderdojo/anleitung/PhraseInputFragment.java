@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class PhraseInputFragment extends Fragment {
 
     @Override
@@ -30,9 +32,15 @@ public class PhraseInputFragment extends Fragment {
         view.findViewById(R.id.button_go).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 // Liest den Text aus dem EditText ein und speichert ihn in die Variable phrase
                 String phrase = editText.getText().toString();
+
+                // Überprüft ob ein Satz eingegeben wurde
+                if (StringUtils.isBlank(phrase)) {
+                    // Wenn nicht wird ein Fehler angezeigt und die Methode nicht weiter ausgeführt
+                    editText.setError(getString(R.string.please_enter_a_phrase));
+                    return;
+                }
 
                 // Erstellt ein Bundle das die Argumente enthält, die ans SecondFragment übergeben werden
                 Bundle arguments = new Bundle();

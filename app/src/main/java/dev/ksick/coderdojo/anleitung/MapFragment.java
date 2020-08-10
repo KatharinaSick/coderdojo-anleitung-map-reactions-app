@@ -68,7 +68,6 @@ public class MapFragment extends Fragment {
         mapView = view.findViewById(R.id.mapview);
 
         phrase = getArguments().getString("phrase");
-        textViewInfo.setText(phrase);
 
         loadRoute();
     }
@@ -92,6 +91,9 @@ public class MapFragment extends Fragment {
             return;
         }
 
+        // Zeigt in der TextView an, dass die Route geladen wird
+        textViewInfo.setText(R.string.loading);
+
         // Erstellt den Request, der später abgesetzt werden soll
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -100,6 +102,17 @@ public class MapFragment extends Fragment {
                         // Parst das JSON in der Variable response zu einer Liste von Place Objekten
                         route = new Gson().fromJson(response, new TypeToken<List<Place>>() {
                         }.getType());
+
+                        // Überprüft ob die Route geparst werden konnte und Elemente enthält
+                        if (route == null || route.isEmpty()) {
+                            // Wenn nicht, wird ein Fehler angezeigt und die Karte wird nicht angezeigt
+                            textViewInfo.setText(getString(R.string.load_route_error));
+                            return;
+                        }
+
+                        // Zeigt den eingegebenen Satz in der Info TextView an, da die Route erfolgreich geladen werden konnte
+                        textViewInfo.setText(phrase);
+
                         // Überprüft ob der Benutzer der App erlaubt hat auf den Speicher zuzugreifen
                         if (isStoragePermissionGranted()) {
                             // Wenn Ja wird showMap() aufgerufen
@@ -114,7 +127,7 @@ public class MapFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         // Der Code in dieser Methode wird ausgeführt, wenn ein Fehler passiert ist.
-                        textViewInfo.setText(error.getMessage());
+                        textViewInfo.setText(error.toString());
                     }
                 });
 
