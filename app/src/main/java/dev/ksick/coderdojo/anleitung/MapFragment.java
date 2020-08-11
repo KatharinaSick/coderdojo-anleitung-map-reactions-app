@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dev.ksick.coderdojo.anleitung.model.Place;
+import dev.ksick.coderdojo.anleitung.util.GetRoadResponseListener;
+import dev.ksick.coderdojo.anleitung.util.GetRoadRunnable;
 
 public class MapFragment extends Fragment {
 
@@ -151,8 +152,6 @@ public class MapFragment extends Fragment {
         mapView.setTileSource(TileSourceFactory.MAPNIK);
         // Braucht man, damit man mit zwei Fingern zoomen kann
         mapView.setMultiTouchControls(true);
-        // Zoomt auf das Zoom Level 6
-        mapView.getController().zoomTo(6.0);
 
         // Erstellt eine Liste mit GeoPoint Objekten. Diese wird später benötigt um eine Route auf der Karte zu zeigen.
         ArrayList<GeoPoint> geoPoints = new ArrayList<>();
@@ -193,27 +192,26 @@ public class MapFragment extends Fragment {
             mapView.getOverlays().add(textOverlay);
         }
 
-        // Die folgenden zwei Zeilen werden benötigt um HTTP Requests am Main Thread abzusetzen.
-        // Mehr dazu und wie man es besser macht im Abschnitt "Bonus: Verbesserungen" der Anleitung.
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+        // Erstellt ein neues GetRoadRunnable
+        Runnable getRoadRunnable = new GetRoadRunnable(getActivity(), geoPoints, new GetRoadResponseListener() {
+            @Override
+            public void onResponse(Road road) {
+                // Erstellt die Linie, die dann auf der Karte angezeigt wird.
+                Polyline roadOverlay = RoadManager.buildRoadOverlay(road, Color.BLACK, 6);
+                // Zeigt die Linie auf der Karte an.
+                mapView.getOverlays().add(roadOverlay);
 
-        // Erstellt einen neuen RoadManager, der sich ums Erstellen der Route kümmert
-        RoadManager roadManager = new OSRMRoadManager(getContext());
-        // Lädt eine Route, die alle GeoPoints beinhaltet, die oben zur Liste hinzugefügt wurden.
-        // Diese methode macht im Hintergrund einen HTTP Request am Main Thread.
-        Road road = roadManager.getRoad(geoPoints);
-        // Erstellt die Linie, die dann auf der Karte angezeigt wird.
-        Polyline roadOverlay = RoadManager.buildRoadOverlay(road, Color.BLACK, 6);
-        // Zeigt die Linie auf der Karte an.
-        mapView.getOverlays().add(roadOverlay);
+                // Erlaubt der Karte nicht weiter als auf dieses Level zu zoomen
+                mapView.setMaxZoomLevel(5.0);
+                // Zentriert die Karte über der Route
+                mapView.zoomToBoundingBox(roadOverlay.getBounds(), true, 150);
+                // Aktualisiert die MapView, damit die Overlays richtig angezeigt werden.
+                mapView.invalidate();
+            }
+        });
 
-        // Erlaubt der Karte nicht weiter als auf dieses Level zu zoomen
-        mapView.setMaxZoomLevel(5.0);
-        // Zentriert die Karte über der Route
-        mapView.zoomToBoundingBox(roadOverlay.getBounds(), true, 150);
-        // Aktualisiert die MapView, damit die Overlays richtig angezeigt werden.
-        mapView.invalidate();
+        // Erstellt einen neuen Thread mit dem oben erstellten Runnable und führt diesen aus.
+        new Thread(getRoadRunnable).start();
     }
 
     private boolean isStoragePermissionGranted() {
