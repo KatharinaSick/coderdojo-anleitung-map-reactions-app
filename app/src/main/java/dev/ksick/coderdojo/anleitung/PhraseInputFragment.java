@@ -1,6 +1,5 @@
 package dev.ksick.coderdojo.anleitung;
 
-import android.Manifest;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,23 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.List;
-
-import dev.ksick.coderdojo.anleitung.model.Place;
 
 public class PhraseInputFragment extends Fragment {
 
@@ -45,8 +34,6 @@ public class PhraseInputFragment extends Fragment {
 
         // Bindet das EditText, dass du im Layout erstellt hast an diese Variable
         final EditText editText = view.findViewById(R.id.edittext_phrase);
-
-        warmUpServerlessFunction();
 
         view.findViewById(R.id.button_go).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,19 +58,23 @@ public class PhraseInputFragment extends Fragment {
                         .navigate(R.id.action_PhraseInputFragment_to_MapFragment, arguments);
             }
         });
+
+        // Schickt einen Request zum Endpunkt von dem die Route geladen wird.
+        // Das Ergebnis wird ignoriert - damit wird nur das "cold start" Problem gelöst.
+        warmUpServerlessFunction();
     }
 
     private void warmUpServerlessFunction() {
         // Erstellt eine Queue, die alle Requests ausführt, die zu ihr hinzugefügt werden
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         // Die URL für den Request. Diese beinhaltet keine phrase, da die Function nur gestartet werden soll;
-        String url = "https://api.map-reactions.ksick.dev/v0-1/route?phrase=";
+        String url = "https://api.map-reactions.ksick.dev/v0-1/route?phrase=wakeup";
 
         // Erstellt den Request, der später abgesetzt werden soll
         StringRequest blankRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-
+                // Das Ergebnis wird ignoriert
             }
         }, null);
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Map Reactions</string>
+    <string name="phrase_input_fragment_label">PhraseInputFragment</string>
+    <string name="map_fragment_label">MapFragment</string>
+    <string name="enter_a_phrase">Gib einen Satz ein</string>
+    <string name="go">Los</string>
+    <string name="loading">Wird geladen…</string>
+    <string name="load_route_error">Route konnte nicht geladen werden</string>
+    <string name="please_enter_a_phrase">Bitte gib einen Satz ein</string>
+</resources>

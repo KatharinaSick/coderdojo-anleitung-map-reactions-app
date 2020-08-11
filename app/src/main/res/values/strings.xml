@@ -4,11 +4,11 @@
     <string name="phrase_input_fragment_label">PhraseInputFragment</string>
     <string name="map_fragment_label">MapFragment</string>
 
-    <string name="enter_a_phrase">Gib einen Satz ein</string>
-    <string name="go">Los</string>
+    <string name="enter_a_phrase">Enter a phrase</string>
+    <string name="go">Go</string>
 
-    <string name="loading">Wird geladen…</string>
-    <string name="load_route_error">Route konnte nicht geladen werden</string>
+    <string name="loading">Loading…</string>
+    <string name="load_route_error">Failed to load route</string>
 
-    <string name="please_enter_a_phrase">Bitte gib einen Satz ein</string>
+    <string name="please_enter_a_phrase">Please enter a phrase</string>
 </resources>
