@@ -8,4 +8,5 @@
     <string name="loading">Wird geladen…</string>
     <string name="load_route_error">Route konnte nicht geladen werden</string>
     <string name="please_enter_a_phrase">Bitte gib einen Satz ein</string>
+    <string name="try_again">Neu starten</string>
 </resources>

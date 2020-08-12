@@ -11,4 +11,6 @@
     <string name="load_route_error">Failed to load route</string>
 
     <string name="please_enter_a_phrase">Please enter a phrase</string>
+
+    <string name="try_again">Try again</string>
 </resources>
