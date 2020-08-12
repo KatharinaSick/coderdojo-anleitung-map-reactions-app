@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Definiert die Form, also ein Rechteck -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- Definiert die Farbe, in diesem Fall weiß -->
+    <solid android:color="@android:color/white" />
+    <!-- Definiert den Rahmen in der Farbe colorPrimaryDark und mit der Stärke 1dp -->
+    <stroke
+        android:width="1dp"
+        android:color="@color/colorPrimaryDark" />
+    <!-- Legt den Radius der Ecken fest -->
+    <corners
+        android:bottomLeftRadius="32dp"
+        android:bottomRightRadius="32dp"
+        android:topLeftRadius="32dp"
+        android:topRightRadius="32dp" />
+</shape>

@@ -5,17 +5,19 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -40,11 +42,18 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SecondFragment extends Fragment {
+import dev.ksick.coderdojo.anleitung.model.Place;
+import dev.ksick.coderdojo.anleitung.util.GetRoadResponseListener;
+import dev.ksick.coderdojo.anleitung.util.GetRoadRunnable;
+
+public class MapFragment extends Fragment {
 
     private final int PERMISSION_REQUEST_CODE = 123;
 
     private TextView textViewInfo;
+    private TextView textViewRoute;
+    private Button buttonTryAgain;
+
     private String phrase;
 
     private MapView mapView;
@@ -56,7 +65,7 @@ public class SecondFragment extends Fragment {
             Bundle savedInstanceState
     ) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_second, container, false);
+        return inflater.inflate(R.layout.fragment_map, container, false);
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
@@ -64,9 +73,20 @@ public class SecondFragment extends Fragment {
 
         textViewInfo = view.findViewById(R.id.textview_info);
         mapView = view.findViewById(R.id.mapview);
+        textViewRoute = view.findViewById(R.id.textview_route);
+        buttonTryAgain = view.findViewById(R.id.button_try_again);
+
+        // Setzt einen Klick Listener auf den Button, um über Klicks informiert zu werden
+        buttonTryAgain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Dieser code wird ausgeführt, wenn der Benutzer auf den Button klickt
+                // Simuliert einen Klick auf die Zurück-Taste
+                getActivity().onBackPressed();
+            }
+        });
 
         phrase = getArguments().getString("phrase");
-        textViewInfo.setText(phrase);
 
         loadRoute();
     }
@@ -90,6 +110,9 @@ public class SecondFragment extends Fragment {
             return;
         }
 
+        // Zeigt in der TextView an, dass die Route geladen wird
+        textViewInfo.setText(R.string.loading);
+
         // Erstellt den Request, der später abgesetzt werden soll
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -98,6 +121,17 @@ public class SecondFragment extends Fragment {
                         // Parst das JSON in der Variable response zu einer Liste von Place Objekten
                         route = new Gson().fromJson(response, new TypeToken<List<Place>>() {
                         }.getType());
+
+                        // Überprüft ob die Route geparst werden konnte und Elemente enthält
+                        if (route == null || route.isEmpty()) {
+                            // Wenn nicht, wird ein Fehler angezeigt und die Karte wird nicht angezeigt
+                            textViewInfo.setText(getString(R.string.load_route_error));
+                            return;
+                        }
+
+                        // Ruft die Methode showRouteSummary() auf.
+                        showRouteSummary();
+
                         // Überprüft ob der Benutzer der App erlaubt hat auf den Speicher zuzugreifen
                         if (isStoragePermissionGranted()) {
                             // Wenn Ja wird showMap() aufgerufen
@@ -116,6 +150,13 @@ public class SecondFragment extends Fragment {
                     }
                 });
 
+        // Erhöht das Timeout für den Request auf 15 Sekunden
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                15000, // Das Timeout in Millisekunden
+                1, // Wie oft der Request wiederholt werden soll, wenn er fehlschlägt
+                1 // Mit dieser Zahl wird das Timeout bei jedem neuen Versuch multipliziert
+        ));
+
         // Fügt den Request zur RequestQueue hinzu um ihn abzusetzen
         requestQueue.add(stringRequest);
     }
@@ -128,11 +169,11 @@ public class SecondFragment extends Fragment {
         mapView.setTileSource(TileSourceFactory.MAPNIK);
         // Braucht man, damit man mit zwei Fingern zoomen kann
         mapView.setMultiTouchControls(true);
-        // Zoomt auf das Zoom Level 6
-        mapView.getController().zoomTo(6.0);
 
         // Erstellt eine Liste mit GeoPoint Objekten. Diese wird später benötigt um eine Route auf der Karte zu zeigen.
         ArrayList<GeoPoint> geoPoints = new ArrayList<>();
+        // Erstellt eine Liste mit SpeechBalloonOverlay Objekten. Diese wird später mit den Markern befüllt.
+        final List<SpeechBalloonOverlay> markers = new ArrayList<>();
 
         // Iteriert über alle Places, die in der Route enthalten sind
         for (int i = 0; i < route.size(); i++) {
@@ -154,10 +195,11 @@ public class SecondFragment extends Fragment {
             Paint textPaint = new Paint();
             textPaint.setColor(Color.WHITE);
             textPaint.setTextSize(48);
+            textPaint.setTypeface(ResourcesCompat.getFont(getContext(), R.font.cabin));
 
             // Definiert die Hintergrundfarbe, in diesem Fall schwarz
             Paint backgroundPaint = new Paint();
-            backgroundPaint.setColor(Color.BLACK);
+            backgroundPaint.setColor(getResources().getColor(R.color.colorPrimary));
 
             // Übergibt die soeben erstellten Paints für Text und Hintergrund an das Overlay, damit diese verwendet werden
             textOverlay.setForeground(textPaint);
@@ -166,31 +208,59 @@ public class SecondFragment extends Fragment {
             // Legt einen Rahmen fest, damit die Marker ein bisschen besser aussehen
             textOverlay.setMargin(16);
 
-            // Fügt das Overlay zur Karte hinzu
-            mapView.getOverlays().add(textOverlay);
+            // Fügt das Overlay zur Liste der Marker hinzu
+            markers.add(textOverlay);
         }
 
-        // Die folgenden zwei Zeilen werden benötigt um HTTP Requests am Main Thread abzusetzen.
-        // Mehr dazu und wie man es besser macht im Abschnitt "Bonus: Verbesserungen" der Anleitung.
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+        // Erstellt ein neues GetRoadRunnable
+        Runnable getRoadRunnable = new GetRoadRunnable(getActivity(), geoPoints, new GetRoadResponseListener() {
+            @Override
+            public void onResponse(Road road) {
+                // Erstellt die Linie, die dann auf der Karte angezeigt wird.
+                Polyline roadOverlay = RoadManager.buildRoadOverlay(road, getResources().getColor(R.color.colorPrimary), 6);
+                // Zeigt die Linie auf der Karte an.
+                mapView.getOverlays().add(roadOverlay);
 
-        // Erstellt einen neuen RoadManager, der sich ums Erstellen der Route kümmert
-        RoadManager roadManager = new OSRMRoadManager(getContext());
-        // Lädt eine Route, die alle GeoPoints beinhaltet, die oben zur Liste hinzugefügt wurden.
-        // Diese methode macht im Hintergrund einen HTTP Request am Main Thread.
-        Road road = roadManager.getRoad(geoPoints);
-        // Erstellt die Linie, die dann auf der Karte angezeigt wird.
-        Polyline roadOverlay = RoadManager.buildRoadOverlay(road, Color.BLACK, 6);
-        // Zeigt die Linie auf der Karte an.
-        mapView.getOverlays().add(roadOverlay);
+                // Erlaubt der Karte nicht weiter als auf dieses Level zu zoomen
+                mapView.setMaxZoomLevel(5.0);
+                // Zentriert die Karte über der Route
+                mapView.zoomToBoundingBox(roadOverlay.getBounds(), true, 150);
 
-        // Erlaubt der Karte nicht weiter als auf dieses Level zu zoomen
-        mapView.setMaxZoomLevel(5.0);
-        // Zentriert die Karte über der Route
-        mapView.zoomToBoundingBox(roadOverlay.getBounds(), true, 150);
-        // Aktualisiert die MapView, damit die Overlays richtig angezeigt werden.
-        mapView.invalidate();
+                // Zeigt die Marker auf der Karte an
+                mapView.getOverlays().addAll(markers);
+
+                // Aktualisiert die MapView, damit die Overlays richtig angezeigt werden.
+                mapView.invalidate();
+            }
+        });
+
+        // Erstellt einen neuen Thread mit dem oben erstellten Runnable und führt diesen aus.
+        new Thread(getRoadRunnable).start();
+    }
+
+    private void showRouteSummary() {
+        // Zeigt den eingegebenen Satz in der Info-TextView an
+        // Durch das String.format(...) werden vor und nach dem Satz Anführungszeichen (") angezeigt
+        textViewInfo.setText(String.format("\"%s\"", phrase));
+
+        // Erstellt einen neuen StringBuilder um die Route im Format [Ort 1, Ort 2, ...] zusammenzusetzen
+        StringBuilder routeStringBuilder = new StringBuilder("[");
+
+        // Iteriert über alle Orte in der Route
+        for (Place place : route) {
+            // Überprüft ob die Länge des StringBuilders größer als 1 (also mindestens 2) ist
+            if (routeStringBuilder.length() > 1) {
+                // Wenn ja, werde ein Beistrich und ein Leerzeichen vor dem nächsten Ort hinzugefügt
+                routeStringBuilder.append(", ");
+            }
+            // Hängt den Namen des Ortes an den StringBuilder an
+            routeStringBuilder.append(place.getName());
+        }
+
+        // Hängt die schließende Klammer an den StringBuilder an
+        routeStringBuilder.append("]");
+        // Setzt den String des StringBuilders als Text in die TextView, die die Route anzeigt
+        textViewRoute.setText(routeStringBuilder.toString());
     }
 
     private boolean isStoragePermissionGranted() {
