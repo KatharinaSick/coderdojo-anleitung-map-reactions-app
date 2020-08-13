@@ -41,8 +41,8 @@ public class PhraseInputFragment extends Fragment {
                 // Liest den Text aus dem EditText ein und speichert ihn in die Variable phrase
                 String phrase = editText.getText().toString();
 
-                // Überprüft ob ein Satz eingegeben wurde
-                if (StringUtils.isBlank(phrase)) {
+                // Überprüft ob ein Satz eingegeben wurde und ob dieser nur aus Buchstaben und Leerzeichen besteht
+                if (StringUtils.isBlank(phrase) || !StringUtils.isAlphaSpace(phrase)) {
                     // Wenn nicht wird ein Fehler angezeigt und die Methode nicht weiter ausgeführt
                     editText.setError(getString(R.string.please_enter_a_phrase));
                     return;
